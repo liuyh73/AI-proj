@@ -56,9 +56,14 @@ export default{
       blackRiverDimen: 4,
       blackJiuGongLeft: 3,
       blackJiuGongRight: 5,
-      blackJiuGongTop: 2,
+      blackJiuGongBottom: 2,
       red: "R",
       black: "B",
+      depth: 4,
+      opponent: {
+        "R": "B",
+        "B": "R"
+      },
       bestStep: {},
       chessBoard: [
         ["BR1","BN1","BB1","BA1","BK","BA2","BB2","BN2","BR2"],
@@ -73,39 +78,64 @@ export default{
         ["RR1","RN1","RB1","RA1","RK","RA2","RB2","RN2","RR2"]
       ],
       chessValue: {
-        "BR1": 500,
-        "BN1": 300,
-        "BB1": 200,
-        "BA1": 100,
-        "BK": this.INT_MAX,
-        "BA2": 100,
-        "BB2": 200,
-        "BN2": 300,
-        "BR2": 500,
-        "BC1": 300,
-        "BC2": 300,
-        "BP1": 100,
-        "BP2": 100,
-        "BP3": 100,
-        "BP4": 100,
-        "BP5": 100,
-
-        "RR1": 500,
-        "RN1": 300,
-        "RB1": 200,
-        "RA1": 200,
-        "RK": this.INT_MAX,
-        "RA2": 100,
-        "RB2": 200,
-        "RN2": 300,
-        "RR2": 500,
-        "RC1": 300,
-        "RC2": 300,
-        "RP1": 100,
-        "RP2": 100,
-        "RP3": 100,
-        "RP4": 100,
-        "RP5": 100
+        "K": 100000,
+        "A": 110,
+        "B": 110,
+        "N": 300,
+        "R": 600,
+        "C": 300,
+        "P": 70
+      },
+      // 控制区域价值
+      chessPosValue: {
+        'P': [
+          [0, 3, 6, 9, 12, 9, 6, 3, 0],
+          [18, 36, 56, 80, 120, 80, 56, 36, 18],
+          [14, 26, 42, 60, 80, 60, 42, 26, 14],
+          [10, 20, 30, 34, 40, 34, 30, 20, 10],
+          [6, 12, 18, 18, 20, 18, 18, 12, 6],
+          [2, 0, 8, 0, 8, 0, 8, 0, 2],
+          [0, 0, -2, 0, 4, 0, -2, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        'R': [
+          [14, 14, 12, 18, 16, 18, 12, 14, 14],
+          [16, 20, 18, 24, 26, 24, 18, 20, 16],
+          [12, 12, 12, 18, 18, 18, 12, 12, 12],
+          [12, 18, 16, 22, 22, 22, 16, 18, 12],
+          [12, 14, 12, 18, 18, 18, 12, 14, 12],
+          [12, 16, 14, 20, 20, 20, 14, 16, 12],
+          [6, 10, 8, 14, 14, 14, 8, 10, 6],
+          [4, 8, 6, 14, 12, 14, 6, 8, 4],
+          [8, 4, 8, 16, 8, 16, 8, 4, 8],
+          [-1, 10, 6, 14, 12, 14, 6, 10, -2],
+        ],
+        'N': [
+          [4, 8, 16, 12, 4, 12, 16, 8, 4],
+          [4, 10, 28, 16, 8, 16, 28, 10, 4],
+          [12, 14, 16, 20, 18, 20, 16, 14, 12],
+          [8, 24, 18, 24, 20, 24, 18, 24, 8],
+          [6, 16, 14, 18, 16, 18, 14, 16, 6],
+          [4, 12, 16, 14, 12, 14, 16, 12, 4],
+          [2, 6, 8, 6, 10, 6, 8, 6, 2],
+          [4, 2, 8, 8, 4, 8, 8, 2, 4],
+          [0, 2, 4, 4, -2, 4, 4, 2, 0],
+          [0, -4, 0, 0, 0, 0, 0, -4, 0],
+        ],
+        'C': [
+          [6, 4, 0, -10, -12, -10, 0, 4, 6],
+          [2, 2, 0, -4, -14, -4, 0, 2, 2],
+          [2, 2, 0, -10, -8, -10, 0, 2, 2],
+          [0, 0, -2, 4, 10, 4, -2, 0, 0],
+          [0, 0, 0, 2, 8, 2, 0, 0, 0],
+          [-2, 0, 4, 2, 6, 2, 4, 0, -2],
+          [0, 0, 0, 2, 4, 2, 0, 0, 0],
+          [4, 0, 8, 6, 10, 6, 8, 0, 4],
+          [0, 2, 4, 6, 6, 6, 4, 2, 0],
+          [0, 0, 2, 6, 6, 6, 2, 0, 0],
+        ],
       }
     }
   },
@@ -129,345 +159,259 @@ export default{
       return pos
     },
     swap: function(chessBoard, from, to) {
-      this.displayChessBoard(chessBoard)
-      chessBoard[to.y][to.x] = this.chessBoard[from.y][from.x]
+      chessBoard[to.y][to.x] = chessBoard[from.y][from.x]
       chessBoard[from.y][from.x] = 0
-      this.displayChessBoard(chessBoard)
     },
-    displayChessBoard: function([...chessBoard]) {
-      console.log(chessBoard)
+    displayChessBoard: function(chessBoard) {
+      console.log("#########chessTable##########")
+      for(let i=0; i<10; i++){
+        console.log(JSON.stringify(chessBoard[i]))
+      }
     },
-    getTarget: function(to) {
+    getTarget: function(chessBoard, to) {
       let target = null
-      if((to.y >= 0 && to.y < 10) && (to.x >= 0 && to.x < 9) && this.chessBoard[to.y][to.x]!=0) {
-        target = this.$refs[this.chessBoard[to.y][to.x]]
+      if((to.y >= 0 && to.y < 10) && (to.x >= 0 && to.x < 9) && chessBoard[to.y][to.x]!=0) {
+        target = this.$refs[chessBoard[to.y][to.x]]
       }
       return target
     },
-    validMove: function(id, from, to) {
-      if(id[0] === "R") {
-        switch(id.slice(0, 2)) {
-          // 兵
-          case "RP":
-            // console.log(from, to)
-            if(to.x === from.x && from.y - to.y === 1) {
+    validMove: function(chessBoard, id, from, to) {
+      switch(id.slice(0, 2)) {
+        // 兵
+        case "RP":
+          if(to.x === from.x && from.y - to.y === 1) {
+            return true
+          } else if (to.y === from.y && Math.abs(to.x - from.x) === 1) {
+            if(from.y < this.redRiverDimen) {
               return true
-            } else if (to.y === from.y && Math.abs(to.x - from.x) === 1) {
-              if(from.y < this.redRiverDimen) {
-                return true
+            }
+          }
+          return false
+        case "BP":
+          if(to.x === from.x && from.y - to.y === -1) {
+            return true
+          } else if (to.y === from.y && Math.abs(to.x - from.x) === 1) {
+            if(from.y > this.blackRiverDimen) {
+              return true
+            }
+          }
+          return false
+        // 砲
+        case "RC":
+        case "BC":
+          if(to.x == from.x || to.y == from.y) {
+            let count = 0
+            if(to.x == from.x) {
+              let res = this.min_max(from.y, to.y)
+              for(let i=res.min + 1; i<res.max; i++) {
+                if(chessBoard[i][to.x] != 0) {
+                  count++
+                }
+              }
+            } else {
+              let res = this.min_max(from.x, to.x)
+              for(let i=res.min + 1; i<res.max; i++) {
+                if(chessBoard[from.y][i] != 0) {
+                  count++
+                }
               }
             }
-            return false
-          // 砲
-          case "RC":
-            if(to.x == from.x || to.y == from.y) {
-              let count = 0
-              if(to.x == from.x) {
-                let res = this.min_max(from.y, to.y)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[i][to.x] != 0) {
-                    count++
-                  }
-                }
-              } else {
-                let res = this.min_max(from.x, to.x)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[from.y][i] != 0) {
-                    count++
-                  }
-                }
-              }
-              if(this.getTarget(to) != null) {
+            if(this.getTarget(chessBoard, to) != null) {
+              if(this.getTarget(chessBoard, to).id[0] === this.opponent[id[0]]) {
                 return count == 1
               } else {
-                return count == 0
-              }
-            }
-            return false
-          // 車
-          case "RR":
-            if(to.x == from.x || to.y == from.y) {
-              let count = 0
-              if(to.x == from.x) {
-                let res = this.min_max(from.y, to.y)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[i][to.x] != 0) {
-                    count++
-                  }
-                }
-              } else {
-                let res = this.min_max(from.x, to.x)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[from.y][i] != 0) {
-                    count++
-                  }
-                }
-              }
-              return count == 0
-            }
-            return false
-          // 馬
-          case "RN":
-            // 顺时针：上、右、下、左
-            // 上
-            if(to.y == from.y-2 && (to.x == from.x-1 || to.x == from.x+1)) {
-              return this.getTarget({"x": from.x, "y": from.y-1}) == null
-            }
-            // 右
-            if(to.x == from.x+2 && (to.y == from.y-1 || to.y == from.y+1)) {
-              return this.getTarget({"x": from.x+1, "y": from.y}) == null
-            }
-            // 下
-            if(to.y == from.y+2 && (to.x == from.x+1 || to.x == from.x-1)) {
-              return this.getTarget({"x": from.x, "y": from.y+1}) == null
-            }
-            // 左
-            if(to.x == from.x-2 && (to.y == from.y+1 || to.y == from.y-1)) {
-              return this.getTarget({"x": from.x-1, "y": from.y}) == null
-            }
-            return false
-          // 相
-          case "RB":
-            // 不能过河
-            if(to.y < this.redRiverDimen){
-              return false
-            }
-            // 顺时针: 右上、右下、左下、左上
-            // 右上
-            if(to.y == from.y-2 && to.x == from.x+2) {
-              return this.getTarget({"x": from.x+1, "y": from.y-1}) == null
-            }
-            // 右下
-            if(to.y == from.y+2 && to.x == from.x+2) {
-              return this.getTarget({"x": from.x+1, "y": from.y+1}) == null
-            }
-            // 左下
-            if(to.y == from.y+2 && to.x == from.x-2) {
-              return this.getTarget({"x": from.x-1, "y": from.y+1}) == null
-            }
-            // 左上
-            if(to.y == from.y-2 && to.x == from.x-2) {
-              return this.getTarget({"x": from.x-1, "y": from.y-1}) == null
-            }
-            return false
-          // 仕
-          case "RA":
-            // 不能出九宫
-            if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
-              return false
-            }
-            // 顺时针：右上、右下、左下、左上
-            // 右上
-            if(to.y == from.y-1 && to.x == from.x+1) {
-              return true
-            }
-            // 右下
-            if(to.y == from.y+1 && to.x == from.x+1) {
-              return true
-            }
-            // 左下
-            if(to.y == from.y+1 && to.x == from.x-1) {
-              return true
-            }
-            // 左上
-            if(to.y == from.y-1 && to.x == from.x-1) {
-              return true
-            }
-            return false
-          // 帥
-          case "RK":
-            // 不能出九宫
-            console.log(to, this.redJiuGongTop)
-            if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
-              return false
-            }
-            if(to.y == from.y && (to.x == from.x+1 || to.x == from.x-1)) {
-              return true
-            }
-            if(to.x == from.x && (to.y == from.y+1 || to.y == from.y-1)) {
-              return true
-            }
-            return false
-        }
-        return false
-      } else if(id[0] === "B") {
-        switch(id.slice(0, 2)) {
-          // 兵
-          case "BP":
-            // console.log(from, to)
-            if(to.x === from.x && from.y - to.y === -1) {
-              return true
-            } else if (to.y === from.y && Math.abs(to.x - from.x) === 1) {
-              if(from.y > this.blackRiverDimen) {
-                return true
-              }
-            }
-            return false
-          // 砲
-          case "BC":
-            if(to.x == from.x || to.y == from.y) {
-              let count = 0
-              if(to.x == from.x) {
-                let res = this.min_max(from.y, to.y)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[i][to.x] != 0) {
-                    count++
-                  }
-                }
-              } else {
-                let res = this.min_max(from.x, to.x)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[from.y][i] != 0) {
-                    count++
-                  }
-                }
-              }
-              if(this.getTarget(to) != null) {
-                if(this.getTarget(to).id[0] === this.red) {
-                  return count == 1
-                } else if(this.getTarget(to).id[0] === this.black) {
-                  return false
-                }
-              } else {
-                return count == 0
-              }
-            }
-            return false
-          // 車
-          case "BR":
-            if(to.x == from.x || to.y == from.y) {
-              let count = 0
-              if(to.x == from.x) {
-                let res = this.min_max(from.y, to.y)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[i][to.x] != 0) {
-                    count++
-                  }
-                }
-              } else {
-                let res = this.min_max(from.x, to.x)
-                for(let i=res.min + 1; i<res.max; i++) {
-                  if(this.chessBoard[from.y][i] != 0) {
-                    count++
-                  }
-                }
-              }
-              if(this.getTarget(to) != null) {
-                if(this.getTarget(to).id[0] === this.red) {
-                  return count == 0
-                } else if(this.getTarget(to).id[0] === this.black) {
-                  return false
-                }
-              } else {
-                return count == 0
-              }
-            }
-            return false
-          // 馬
-          case "RN":
-            if(this.getTarget(to)!=null) {
-              if(this.getTarget(to).id[0] === this.black) {
                 return false
               }
+            } else {
+              return count == 0
             }
-            // 顺时针：上、右、下、左
-            // 上
-            if(to.y == from.y-2 && (to.x == from.x-1 || to.x == from.x+1)) {
-              return this.getTarget({"x": from.x, "y": from.y-1}) == null
+          }
+          return false
+        // 車
+        case "RR":
+        case "BR":
+          if(to.x == from.x || to.y == from.y) {
+            let count = 0
+            if(to.x == from.x) {
+              let res = this.min_max(from.y, to.y)
+              for(let i=res.min + 1; i<res.max; i++) {
+                if(chessBoard[i][to.x] != 0) {
+                  count++
+                }
+              }
+            } else {
+              let res = this.min_max(from.x, to.x)
+              for(let i=res.min + 1; i<res.max; i++) {
+                if(chessBoard[from.y][i] != 0) {
+                  count++
+                }
+              }
             }
-            // 右
-            if(to.x == from.x+2 && (to.y == from.y-1 || to.y == from.y+1)) {
-              return this.getTarget({"x": from.x+1, "y": from.y}) == null
+            if(this.getTarget(chessBoard, to) != null) {
+              if(this.getTarget(chessBoard, to).id[0] === this.opponent[id[0]]) {
+                return count == 0
+              } else {
+                return false
+              }
+            } else {
+              return count == 0
             }
-            // 下
-            if(to.y == from.y+2 && (to.x == from.x+1 || to.x == from.x-1)) {
-              return this.getTarget({"x": from.x, "y": from.y+1}) == null
-            }
-            // 左
-            if(to.x == from.x-2 && (to.y == from.y+1 || to.y == from.y-1)) {
-              return this.getTarget({"x": from.x-1, "y": from.y}) == null
-            }
-            return false
-          // 相
-          case "RB":
-            // 不能过河
-            if(to.y < this.redRiverDimen){
+          }
+          return false
+        // 馬
+        case "RN":
+        case "BN":
+          if(this.getTarget(chessBoard, to)!=null) {
+            if(this.getTarget(chessBoard, to).id[0] === id[0]) {
               return false
             }
-            // 顺时针: 右上、右下、左下、左上
-            // 右上
-            if(to.y == from.y-2 && to.x == from.x+2) {
-              return this.getTarget({"x": from.x+1, "y": from.y-1}) == null
-            }
-            // 右下
-            if(to.y == from.y+2 && to.x == from.x+2) {
-              return this.getTarget({"x": from.x+1, "y": from.y+1}) == null
-            }
-            // 左下
-            if(to.y == from.y+2 && to.x == from.x-2) {
-              return this.getTarget({"x": from.x-1, "y": from.y+1}) == null
-            }
-            // 左上
-            if(to.y == from.y-2 && to.x == from.x-2) {
-              return this.getTarget({"x": from.x-1, "y": from.y-1}) == null
-            }
+          }
+          // 顺时针：上、右、下、左
+          // 上
+          if(to.y == from.y-2 && (to.x == from.x-1 || to.x == from.x+1)) {
+            return this.getTarget(chessBoard, {"x": from.x, "y": from.y-1}) == null
+          }
+          // 右
+          if(to.x == from.x+2 && (to.y == from.y-1 || to.y == from.y+1)) {
+            return this.getTarget(chessBoard, {"x": from.x+1, "y": from.y}) == null
+          }
+          // 下
+          if(to.y == from.y+2 && (to.x == from.x+1 || to.x == from.x-1)) {
+            return this.getTarget(chessBoard, {"x": from.x, "y": from.y+1}) == null
+          }
+          // 左
+          if(to.x == from.x-2 && (to.y == from.y+1 || to.y == from.y-1)) {
+            return this.getTarget(chessBoard, {"x": from.x-1, "y": from.y}) == null
+          }
+          return false
+        // 相
+        case "RB":
+          // 不能过河
+          if(to.y < this.redRiverDimen){
             return false
-          // 仕
-          case "RA":
-            // 不能出九宫
-            if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
+          }
+        case "BB":
+          if(id[0] == this.black && to.y > this.blackRiverDimen) {
+            return false
+          }
+          if(this.getTarget(chessBoard, to)!=null) {
+            if(this.getTarget(chessBoard, to).id[0] == id[0]) {
               return false
             }
-            // 顺时针：右上、右下、左下、左上
-            // 右上
-            if(to.y == from.y-1 && to.x == from.x+1) {
-              return true
-            }
-            // 右下
-            if(to.y == from.y+1 && to.x == from.x+1) {
-              return true
-            }
-            // 左下
-            if(to.y == from.y+1 && to.x == from.x-1) {
-              return true
-            }
-            // 左上
-            if(to.y == from.y-1 && to.x == from.x-1) {
-              return true
-            }
+          }
+          // 顺时针: 右上、右下、左下、左上
+          // 右上
+          if(to.y == from.y-2 && to.x == from.x+2) {
+            return this.getTarget(chessBoard, {"x": from.x+1, "y": from.y-1}) == null
+          }
+          // 右下
+          if(to.y == from.y+2 && to.x == from.x+2) {
+            return this.getTarget(chessBoard, {"x": from.x+1, "y": from.y+1}) == null
+          }
+          // 左下
+          if(to.y == from.y+2 && to.x == from.x-2) {
+            return this.getTarget(chessBoard, {"x": from.x-1, "y": from.y+1}) == null
+          }
+          // 左上
+          if(to.y == from.y-2 && to.x == from.x-2) {
+            return this.getTarget(chessBoard, {"x": from.x-1, "y": from.y-1}) == null
+          }
+          return false
+        // 仕
+        case "RA":
+          // 不能出九宫
+          if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
             return false
-          // 帥
-          case "RK":
-            // 不能出九宫
-            console.log(to, this.redJiuGongTop)
-            if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
+          }
+        case "BA":
+          if(id[0] == this.black && (to.y > this.blackJiuGongBottom || to.x<this.blackJiuGongLeft || to.x > this.blackJiuGongRight)) {
+            return false
+          }
+          if(this.getTarget(chessBoard, to)!=null) {
+            if(this.getTarget(chessBoard, to).id[0] == id[0]) {
               return false
             }
-            if(to.y == from.y && (to.x == from.x+1 || to.x == from.x-1)) {
-              return true
-            }
-            if(to.x == from.x && (to.y == from.y+1 || to.y == from.y-1)) {
-              return true
-            }
+          }
+          // 顺时针：右上、右下、左下、左上
+          // 右上
+          if(to.y == from.y-1 && to.x == from.x+1) {
+            return true
+          }
+          // 右下
+          if(to.y == from.y+1 && to.x == from.x+1) {
+            return true
+          }
+          // 左下
+          if(to.y == from.y+1 && to.x == from.x-1) {
+            return true
+          }
+          // 左上
+          if(to.y == from.y-1 && to.x == from.x-1) {
+            return true
+          }
+          return false
+        // 帥
+        case "RK":
+          // 不能出九宫
+          if(to.y < this.redJiuGongTop || to.x<this.redJiuGongLeft || to.x > this.redJiuGongRight){
             return false
-        }
-        return false
+          }
+        case "BK":
+          if(id[0] == this.black && (to.y > this.blackJiuGongBottom || to.x<this.blackJiuGongLeft || to.x > this.blackJiuGongRight)) {
+            return false
+          }
+          if(this.getTarget(chessBoard, to)!=null) {
+            if(this.getTarget(chessBoard, to).id[0] == id[0]) {
+              return false
+            }
+          }
+          if(to.y == from.y && (to.x == from.x+1 || to.x == from.x-1)) {
+            return true
+          }
+          if(to.x == from.x && (to.y == from.y+1 || to.y == from.y-1)) {
+            return true
+          }
+          return false
       }
+      return false
     },
     move: function(selected, from, to) {
-      let target = this.getTarget(to)
+      let target = this.getTarget(this.chessBoard, to)
       this.swap(this.chessBoard, from, to)
       to = this.realPos(to)
-      // console.log(selected.style)
       // document.getElementById(selected.id).setAttribute("style", "top:"+to.y+"px;left:"+to.x+"px")
       selected.style.top = to.y+"px"
       selected.style.left = to.x+"px"
-      selected.style.transition = "all 0.5s"
+      // selected.style.transition = "all 0.5s"
       if(target != null) {
         setTimeout(() => {
           target.style.display = "none"
         }, 500);
       }
+    },
+    getCopy: function(array) {
+      let re=[];
+      for(let i=0;i<array.length;i++){
+        let [...arr]=array[i];
+        re.push(arr);
+      }
+      return re
+    },
+    updateDepth: function() {
+      let count = 0
+      for(let i=0; i<10; i++) {
+        for(let j=0; j<9; j++) {
+          if(this.chessBoard[i][j] != 0) {
+            count++
+          }
+        }
+      }
+      if(count < 16) {
+        this.depth = 5
+      } else if(count < 28) {
+        this.depth = 4
+      }
+      return count
     },
     imgClick: function(event) {
       let from = {}, to = {} 
@@ -490,105 +434,135 @@ export default{
         console.log("try to eat")
         from = this.formatPos({"x": this.selected.offsetLeft + this.chessWidth/2, "y": this.selected.offsetTop + this.chessWidth/2})
         to = this.formatPos({"x": event.target.offsetLeft + this.chessWidth/2, "y": event.target.offsetTop + this.chessHeight/2})
-        if(this.validMove(this.selected.id, from, to)) {
+        if(this.validMove(this.chessBoard, this.selected.id, from, to)) {
           this.move(this.selected, from, to)
           this.selected.className = ""
           this.selected = null
-          // this.robot()
+          this.updateDepth()
+          this.robot()
         }
       } else if(this.selected != null) {
         console.log("move")
         from = this.formatPos({"x": this.selected.offsetLeft + this.chessWidth/2, "y": this.selected.offsetTop + this.chessWidth/2})
         to = this.formatPos({"x": event.layerX, "y": event.layerY})
-        if(this.validMove(this.selected.id, from, to)) {
+        if(this.validMove(this.chessBoard, this.selected.id, from, to)) {
           this.move(this.selected, from, to)
           this.selected.className = ""
           this.selected = null
-          // this.robot()
+          this.updateDepth()
+          this.robot()
         }
       }
     },
     robot: function() {
       this.turnToPlayer = false
-      console.log(this.generateNextStep(this.chessBoard, this.black, this.INT_MIN, this.INT_MAX, 1));
+      this.robotNextStep(this.getCopy(this.chessBoard), this.black, this.INT_MIN, this.INT_MAX, 1);
+      console.log("this.bestStep: ", JSON.stringify(this.bestStep))
+      this.displayChessBoard(this.chessBoard)
       this.move(this.$refs[this.bestStep.id], this.bestStep.from, this.bestStep.to)
+      this.turnToPlayer = true
+      this.displayChessBoard(this.chessBoard)
     },
-    evaluation: function([...chessBoard]) {
-      return 100
-    },
-    genetatePStep: function([...chessBoard], from) {
-      let tos = []
-      // 上, 右, 下, 左
-      let tosTemp = [{"x": from.x, "y": from.y-1}, {"x": from.x+1, "y": from.y}, {"x": from.x, "y": from.y+1}, {"x": from.x-1, "y": from.y}]
-      let that = this
-      tosTemp.forEach(function(to) {
-        // console.log(chessBoard[from.y][from.x], to)
-        if(that.validMove(chessBoard[from.y][from.x], from, to)) {
-          tos.push(to)
+    evaluation: function(chessBoard) {
+      let blackValue =0, redValue=0, tos=[], target
+      // console.log("evaluation in: ", chessBoard)
+      for(let i=0;i<10;i++) {
+        for(let j=0;j<9;j++) {
+          if(chessBoard[i][j]!=0) {
+            if(chessBoard[i][j][0] == this.black) {
+              blackValue += this.chessValue[chessBoard[i][j][1]]
+              if(this.chessPosValue[chessBoard[i][j][1]] != undefined) {
+                blackValue += this.chessPosValue[chessBoard[i][j][1]][9-i][j] * 8
+              }
+              // tos = this.generateNextStep(chessBoard, {"x": j, "y": i})
+              // for(let k=0, len=tos.length; k<len; k++) {
+              //   target = this.getTarget(chessBoard, tos[k])
+              //   if(target != null && target.id[0] == this.red && this.validMove(chessBoard, chessBoard[i][j], {"x": j, "y": i}, tos[k])) {
+              //     redValue -= this.chessValue[target.id[1]]/2
+              //   }
+              // }
+            } else {
+              redValue += this.chessValue[chessBoard[i][j][1]]
+              if(this.chessPosValue[chessBoard[i][j][1]] != undefined) {
+                redValue += this.chessPosValue[chessBoard[i][j][1]][i][j]  * 8
+              }
+              // tos = this.generateNextStep(chessBoard, {"x": j, "y": i})
+              // for(let k=0, len=tos.length; k<len; k++) {
+              //   target = this.getTarget(chessBoard, tos[k])
+              //   if(target!=null && target.id[0] == this.black && this.validMove(chessBoard, chessBoard[i][j], {"x": j, "y": i}, tos[k])) {
+              //     blackValue -= this.chessValue[target.id[1]]/2
+              //   }
+              // }
+            }
+          }
         }
-      })
-      console.log("tos length: "+tos.length)
+      }
+      // console.log("evaluation out: ", blackValue - redValue)
+      return blackValue - redValue
+    },
+    generateNextStep: function(chessBoard, from) {
+      let tos = [], to
+      for(let i=0; i<10; i++) {
+        for(let j=0; j<9; j++) {
+          to = {"x": j, "y": i}
+          if(this.validMove(chessBoard, chessBoard[from.y][from.x], from, to)) {
+            tos.push(to)
+          }
+        }
+      }
       return tos
     },
-    generateNextStep: function([...chessBoard], turn, alpha, beta, step) {
-      if(step >= 5) {
+    robotNextStep: function(chessBoard, turn, alpha, beta, step) {
+      // console.log("step"+step)
+      if(step >= this.depth) {
         return this.evaluation(chessBoard)
       }
-      console.log("step"+step)
-      console.log(chessBoard)
-      let value, nextStep = {}
+      // this.displayChessBoard(chessBoard)
+      let value, nextStep = {}, from
       for(let i=0; i<10; i++) {
         for(let j=0; j<9; j++) {
           if(chessBoard[i][j] == 0) {
             continue
           }
           if(chessBoard[i][j].indexOf(turn) === 0) {
-            switch(chessBoard[i][j].slice(1, 2)) {
-              case "P": 
-                // 上右下左
-                let [...tos] = this.genetatePStep(chessBoard, {"x": j, "y": i})
-                console.log(tos.length)
-                for(let i=0, len = tos.length; i<len; i++) {
-                  this.swap(chessBoard, from, tos[i])
-                  if(turn == this.black) {
-                    value = this.generateNextStep(chessBoard, this.red, alpha, beta, step+1)
-                    if(value > alpha) {
-                      alpha = value
-                      nextStep.id = chessBoard[i][j]
-                      nextStep.from = from
-                      nextStep.to = tos[i]
-                    }
-                    if(alpha > beta) {
-                      return beta
-                    }
-                  } else {
-                    value = this.generateNextStep(chessBoard, this.black, alpha, beta, step+1)
-                    if(value < beta) {
-                      beta = value
-                      nextStep.id = chessBoard[i][j]
-                      nextStep.from = from
-                      nextStep.to = tos[i]
-                    }
-                    if(beta < alpha) {
-                      return alpha
-                    }
-                  }
-                  this.swap(chessBoard, tos[i], from)
+            from = {"x": j, "y": i}
+            let [...tos] = this.generateNextStep(chessBoard, from), temp
+            // console.log(chessBoard[i][j], "from: ", from, "tos: ", tos)
+            for(let k=0, len = tos.length; k<len; k++) {
+              // this.displayChessBoard(chessBoard)
+              temp = chessBoard[tos[k].y][tos[k].x]
+              this.swap(chessBoard, from, tos[k])
+              // this.displayChessBoard(chessBoard)
+              if(turn == this.black) {
+                value = this.robotNextStep(this.getCopy(chessBoard), this.red, alpha, beta, step+1)
+                if(value > alpha) {
+                  alpha = value
+                  nextStep.id = chessBoard[tos[k].y][tos[k].x]
+                  nextStep.from = from
+                  nextStep.to = tos[k]
                 }
-                break
-              case "C":
-              case "R":
-              case "N":
-              case "B":
-              case "C":
-              case "K":
+                if(alpha > beta) {
+                  return beta
+                }
+              } else {
+                value = this.robotNextStep(this.getCopy(chessBoard), this.black, alpha, beta, step+1)
+                if(value < beta) {
+                  beta = value
+                  nextStep.id = chessBoard[tos[k].y][tos[k].x]
+                  nextStep.from = from
+                  nextStep.to = tos[k]
+                }
+                if(beta < alpha) {
+                  return alpha
+                }
+              }
+              this.swap(chessBoard, tos[k], from)
+              chessBoard[tos[k].y][tos[k].x] = temp
             }
           }
         }
       }
       this.bestStep = nextStep
-      console.log(nextStep)
-      console.log("value:"+value)
       return value
     }
   }
@@ -614,6 +588,7 @@ export default{
   }
   img {
     position: absolute;
+    transition: all 0.5s;
   }
   .OOS {
     background: url("../assets/chesses/OOS.png")
