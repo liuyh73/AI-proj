@@ -1,7 +1,7 @@
 <template>
-  <div class="chess">
+  <div class="chess" ref="chess">
       <h1>中&nbsp;&nbsp;国&nbsp;&nbsp;象&nbsp;&nbsp;棋</h1>
-      <div class="chessBoard" @click="turnToPlayer && imgClick($event)">
+      <div class="chessBoard" @click="turnToPlayer && imgClick($event)" v-if="restart">
         <img id="BR1" ref="BR1" src="../assets/chesses/BR.png"/>
         <img id="BN1" ref="BN1" src="../assets/chesses/BN.png"/>
         <img id="BB1" ref="BB1" src="../assets/chesses/BB.png"/>
@@ -36,6 +36,19 @@
         <img id="RN2" ref="RN2" src="../assets/chesses/RN.png"/>
         <img id="RR2" ref="RR2" src="../assets/chesses/RR.png"/>
       </div>
+      <div id="Loading" v-if="!restart">
+        <div class="loader-inner ball-beat">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+      <div class="MsgDiv" v-if="end">
+        <p>
+          {{ endInfo }}
+        </p>
+        <button @click="reset">再来一局</button>
+      </div>
   </div>
 </template>
 
@@ -60,6 +73,9 @@ export default{
       red: "R",
       black: "B",
       depth: 4,
+      end: false,
+      endInfo: "",
+      restart: true,
       opponent: {
         "R": "B",
         "B": "R"
@@ -82,9 +98,9 @@ export default{
         "A": 110,
         "B": 110,
         "N": 300,
-        "R": 600,
+        "R": 500,
         "C": 300,
-        "P": 70
+        "P": 100
       },
       // 控制区域价值
       chessPosValue: {
@@ -174,6 +190,24 @@ export default{
         target = this.$refs[chessBoard[to.y][to.x]]
       }
       return target
+    },
+    ending: function(id) {
+      this.turnToPlayer=false
+      this.end=true
+      switch(id){
+        case "BK":
+          this.endInfo = "You Win!"
+          break
+        case "RK":
+          this.endInfo = "You Lose!"
+          break
+      }
+    },
+    reset: function() {
+      this.restart=false
+      setTimeout(()=> {
+        Object.assign(this.$data, this.$options.data())
+      }, 500)
     },
     validMove: function(chessBoard, id, from, to) {
       switch(id.slice(0, 2)) {
@@ -386,7 +420,10 @@ export default{
       if(target != null) {
         setTimeout(() => {
           target.style.display = "none"
-        }, 500);
+        }, 500)
+      }
+      if(target!=null && (target.id === "BK" || target.id === "RK")) {
+        this.ending(target.id)
       }
     },
     getCopy: function(array) {
@@ -406,10 +443,10 @@ export default{
           }
         }
       }
-      if(count < 16) {
+      if(count < 8) {
+        this.depth = 6
+      } else if(count < 15) {
         this.depth = 5
-      } else if(count < 28) {
-        this.depth = 4
       }
       return count
     },
@@ -457,11 +494,10 @@ export default{
     robot: function() {
       this.turnToPlayer = false
       this.robotNextStep(this.getCopy(this.chessBoard), this.black, this.INT_MIN, this.INT_MAX, 1);
-      console.log("this.bestStep: ", JSON.stringify(this.bestStep))
-      this.displayChessBoard(this.chessBoard)
+      // this.displayChessBoard(this.chessBoard)
       this.move(this.$refs[this.bestStep.id], this.bestStep.from, this.bestStep.to)
       this.turnToPlayer = true
-      this.displayChessBoard(this.chessBoard)
+      // this.displayChessBoard(this.chessBoard)
     },
     evaluation: function(chessBoard) {
       let blackValue =0, redValue=0, tos=[], target
@@ -478,19 +514,19 @@ export default{
               // for(let k=0, len=tos.length; k<len; k++) {
               //   target = this.getTarget(chessBoard, tos[k])
               //   if(target != null && target.id[0] == this.red && this.validMove(chessBoard, chessBoard[i][j], {"x": j, "y": i}, tos[k])) {
-              //     redValue -= this.chessValue[target.id[1]]/2
+              //     redValue -= this.chessValue[target.id[1]]
               //   }
               // }
             } else {
               redValue += this.chessValue[chessBoard[i][j][1]]
               if(this.chessPosValue[chessBoard[i][j][1]] != undefined) {
-                redValue += this.chessPosValue[chessBoard[i][j][1]][i][j]  * 8
+                redValue += this.chessPosValue[chessBoard[i][j][1]][i][j] * 8
               }
-              // tos = this.generateNextStep(chessBoard, {"x": j, "y": i})
+              tos = this.generateNextStep(chessBoard, {"x": j, "y": i})
               // for(let k=0, len=tos.length; k<len; k++) {
               //   target = this.getTarget(chessBoard, tos[k])
               //   if(target!=null && target.id[0] == this.black && this.validMove(chessBoard, chessBoard[i][j], {"x": j, "y": i}, tos[k])) {
-              //     blackValue -= this.chessValue[target.id[1]]/2
+              //     blackValue -= this.chessValue[target.id[1]]
               //   }
               // }
             }
@@ -592,6 +628,77 @@ export default{
   }
   .OOS {
     background: url("../assets/chesses/OOS.png")
+  }
+  button {
+    width: 100px;
+    height: 40px;
+    color: #279fcf;
+  }
+  #Loading {
+    position: absolute;
+    top:40%;
+    left:50%;
+    -webkit-transform: translateY(-50%)  translateX(-50%);
+    transform: translateY(-50%)  translateX(-50%);
+    z-index:100;
+  }
+  @-webkit-keyframes ball-beat {
+    50% {
+      opacity: 0.2;
+      -webkit-transform: scale(0.75);
+      transform: scale(0.75); 
+    }
+    100% {
+      opacity: 1;
+      -webkit-transform: scale(1);
+      transform: scale(1); 
+    } 
+  }
+  @keyframes ball-beat {
+    50% {
+      opacity: 0.2;
+      -webkit-transform: scale(0.75);
+      transform: scale(0.75); 
+    }
+    100% {
+      opacity: 1;
+      -webkit-transform: scale(1);
+      transform: scale(1); 
+    } 
+  }
+
+  .ball-beat > div {
+    background-color: #279fcf;
+    width: 15px;
+    height: 15px;
+    border-radius: 100% !important;
+    margin: 2px;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    display: inline-block;
+    -webkit-animation: ball-beat 0.7s 0s infinite linear;
+    animation: ball-beat 0.7s 0s infinite linear; 
+  }
+  .ball-beat > div:nth-child(2n-1) {
+    -webkit-animation-delay: 0.35s !important;
+    animation-delay: 0.35s !important;
+  }
+  .MsgDiv {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 3;
+  }
+
+  .MsgDiv p {
+    margin-top: 600px;
+    opacity: 1;
+    font-size: 20px;
+    padding: 0px;
+    color: red;
+    text-align: center;
   }
   #BP1 {
     top: 128px;
