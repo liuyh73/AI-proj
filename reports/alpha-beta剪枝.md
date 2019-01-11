@@ -396,7 +396,7 @@ evaluation: function(chessBoard) {
 
 失败时状态：
 
-![5](./images/5.PNG)
+![5](./images/5.png)
 
 ## 改进
 棋局评估函数还有很大的改进空间，有时会发生黑方已经被将军，但是不保护“将”的情况。
