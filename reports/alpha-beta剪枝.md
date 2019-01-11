@@ -113,6 +113,71 @@ validMove: function(chessBoard, id, from, to) {
 },
 ```
 
+## 玩家移动
+
+玩家移动主要由以下四种情况：
+
+1. 选中红方棋子
+2. 已有选中的棋子，落子位置有其他本方棋子
+3. 已有选中的棋子，落子位置为黑方棋子
+4. 已有选中的棋子，落子位置没有棋子
+
+```js
+imgClick: function(event) {
+    let from = {}, to = {} 
+    if(this.selected == null && event.target.id.indexOf("R") === 0) {
+        console.log("select")
+        event.target.className = "OOS"
+        this.selected = event.target
+        return
+    } else if (this.selected != null && event.target.id.indexOf("R") === 0) {
+        console.log("change select")
+        if(this.selected.id != event.target.id) {
+            event.target.className = "OOS"
+            this.selected.className = ""
+            this.selected = event.target
+        } else {
+            this.selected.className = ""
+            this.selected=null
+        }
+    } else if(this.selected != null && event.target.id.indexOf("B") === 0) {
+        console.log("try to eat")
+        from = this.formatPos({"x": this.selected.offsetLeft + this.chessWidth/2, "y": this.selected.offsetTop + this.chessWidth/2})
+        to = this.formatPos({"x": event.target.offsetLeft + this.chessWidth/2, "y": event.target.offsetTop + this.chessHeight/2})
+        if(this.validMove(this.chessBoard, this.selected.id, from, to)) {
+            this.move(this.selected, from, to)
+            this.selected.className = ""
+            this.selected = null
+            this.updateDepth()
+            if(this.end) {
+                return
+            }
+            setTimeout(()=>{
+                this.robot()
+                this.turnToPlayer = true
+            }, 0)
+        }
+    } else if(this.selected != null) {
+        console.log("move")
+        from = this.formatPos({"x": this.selected.offsetLeft + this.chessWidth/2, "y": this.selected.offsetTop + this.chessWidth/2})
+        to = this.formatPos({"x": event.layerX, "y": event.layerY})
+        if(this.validMove(this.chessBoard, this.selected.id, from, to)) {
+            this.move(this.selected, from, to)
+            this.selected.className = ""
+            this.selected = null
+            this.updateDepth()
+            this.turnToPlayer = false
+            if(this.end) {
+                return
+            }
+            setTimeout(()=>{
+                this.robot()
+                this.turnToPlayer = true
+            }, 0)
+        }
+    }
+```
+
 ## 搜索算法
 
 ### 最小值-最大值搜索搜索
@@ -193,21 +258,21 @@ robotNextStep: function(chessBoard, turn, alpha, beta, step) {
 ```javascript
 // depth初始值为4
 updateDepth: function() {
-  let count = 0
-  for(let i=0; i<10; i++) {
-    for(let j=0; j<9; j++) {
-      if(this.chessBoard[i][j] != 0) {
-        count++
-      }
+    let count = 0
+    for(let i=0; i<10; i++) {
+        for(let j=0; j<9; j++) {
+            if(this.chessBoard[i][j] != 0) {
+                count++
+            }
+        }
     }
-  }
-  if(count < 8) {
-    this.depth = 6
-  } else if(count < 15) {
-    this.depth = 5
-  }
-  return count
-}
+    if(count < 8) {
+        this.depth = 6
+    } else if(count < 15) {
+        this.depth = 5
+    }
+    return count
+},
 ```
 
 ## 棋局评估
@@ -334,7 +399,8 @@ evaluation: function(chessBoard) {
 ![5](./images/5.PNG)
 
 ## 改进
-棋局评估函数还有很大的改进空间，有时会发生红方已经将军，但是黑方不保护“将”的情况。
+棋局评估函数还有很大的改进空间，有时会发生黑方已经被将军，但是不保护“将”的情况。
 ## 参考文献
 1.[中国象棋博弈系统实现的关键技术探索_肖秀春](http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CJFDLAST2018&filename=DZRU201815076&uid=WEEvREdxOWJmbC9oM1NjYkZCbDZZZ3FjK2N0b1gybmtCcm1pc014Z0FpNWw=$R1yZ0H6jyaa0en3RxVUd8df-oHi7XMMDo7mtKT6mSmEvTuk11l2gFA!!&v=MTMwNzh6UElUZlplN0c0SDluTnFvOUNZb1I4ZVgxTHV4WVM3RGgxVDNxVHJXTTFGckNVUkxLZVplUm5GeTdrVmI=)
+
 2.[基于博弈树搜索算法的中国象棋游戏的设计与实现_刘淑琴](http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CJFDLAST2017&filename=ZDYY201710036&uid=WEEvREdxOWJmbC9oM1NjYkZCbDZZZ3FjK2N0b1gybmtCcm1pc014Z0FpNWw=$R1yZ0H6jyaa0en3RxVUd8df-oHi7XMMDo7mtKT6mSmEvTuk11l2gFA!!&v=MTg1NTM0OUdZb1I4ZVgxTHV4WVM3RGgxVDNxVHJXTTFGckNVUkxLZVplUm5GeTdrV3I3T1B5blNkN0c0SDliTnI=)

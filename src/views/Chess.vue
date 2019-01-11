@@ -53,6 +53,7 @@
 </template>
 
 <script>
+import { setTimeout } from 'timers';
 export default{
   data () {
     return {
@@ -194,12 +195,15 @@ export default{
     ending: function(id) {
       this.turnToPlayer=false
       this.end=true
+      console.log("end2:", this.end)
       switch(id){
         case "BK":
           this.endInfo = "You Win!"
+          console.log("You Win!")
           break
         case "RK":
           this.endInfo = "You Lose!"
+          console.log("You Lose!")
           break
       }
     },
@@ -413,14 +417,10 @@ export default{
       let target = this.getTarget(this.chessBoard, to)
       this.swap(this.chessBoard, from, to)
       to = this.realPos(to)
-      // document.getElementById(selected.id).setAttribute("style", "top:"+to.y+"px;left:"+to.x+"px")
       selected.style.top = to.y+"px"
       selected.style.left = to.x+"px"
-      // selected.style.transition = "all 0.5s"
       if(target != null) {
-        setTimeout(() => {
-          target.style.display = "none"
-        }, 500)
+        target.style.display = "none"
       }
       if(target!=null && (target.id === "BK" || target.id === "RK")) {
         this.ending(target.id)
@@ -476,7 +476,13 @@ export default{
           this.selected.className = ""
           this.selected = null
           this.updateDepth()
-          this.robot()
+          if(this.end) {
+            return
+          }
+          setTimeout(()=>{
+            this.robot()
+            this.turnToPlayer = true
+          }, 0)
         }
       } else if(this.selected != null) {
         console.log("move")
@@ -487,16 +493,21 @@ export default{
           this.selected.className = ""
           this.selected = null
           this.updateDepth()
-          this.robot()
+          this.turnToPlayer = false
+          if(this.end) {
+            return
+          }
+          setTimeout(()=>{
+            this.robot()
+            this.turnToPlayer = true
+          }, 0)
         }
       }
     },
     robot: function() {
-      this.turnToPlayer = false
       this.robotNextStep(this.getCopy(this.chessBoard), this.black, this.INT_MIN, this.INT_MAX, 1);
       // this.displayChessBoard(this.chessBoard)
       this.move(this.$refs[this.bestStep.id], this.bestStep.from, this.bestStep.to)
-      this.turnToPlayer = true
       // this.displayChessBoard(this.chessBoard)
     },
     evaluation: function(chessBoard) {
@@ -624,7 +635,7 @@ export default{
   }
   img {
     position: absolute;
-    transition: all 0.5s;
+    /* transition: all 0.5s; */
   }
   .OOS {
     background: url("../assets/chesses/OOS.png")
